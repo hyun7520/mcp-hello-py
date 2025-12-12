@@ -117,7 +117,7 @@ def tell_weather(region: str) -> str:
     region의 금일 날씨를 알려줍니다.
 
     Args:
-        region: 날씨를 알려줄 지역 (예: "서울", "부산", "인천")
+        region: 날씨를 알려줄 지역
     Returns:
         날씨 요소 별로 줄바꿈으로 구분된 문자열
     Examples:
