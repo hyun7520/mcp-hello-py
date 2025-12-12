@@ -107,8 +107,7 @@ def say_hello_multiple(names: list[str]) -> str:
 
 @mcp.tool()
 def tell_weather(region: str) -> str:
-    url = "http://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst?" \
-    "serviceKey=0b13b8c7adfa9aa11719a3c95160bcadb3af93677c9ff77dd7d3edfa87772bca&numOfRows=10&pageNo=1&regId=11B00000&tmFc=201310171800"
+    url = "http://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst?serviceKey=0b13b8c7adfa9aa11719a3c95160bcadb3af93677c9ff77dd7d3edfa87772bca&numOfRows=10&pageNo=1&regId=11B00000&tmFc=201310171800"
     response = requests.get(url)
     if response.status_code != 200:
         return f"날씨 정보를 가져오지 못했습니다."
