@@ -105,9 +105,11 @@ def say_hello_multiple(names: list[str]) -> str:
     return "\n".join(greetings)
 
 @mcp.tool()
-def multiply(x: str) -> str:
+def multiply(x: int) -> str:
     
-    return f"{x} 곱하기 10은?\\n{x*10}"
+    answer = x * 10
+
+    return f"{x} 곱하기 10은?\\n{answer}"
 
 # ============================================================================
 # Resources (리소스)
