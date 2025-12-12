@@ -28,6 +28,8 @@ Simple Hello MCP Server
 """
 
 import os
+import requests
+from datetime import datetime, timedelta
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
@@ -47,7 +49,14 @@ mcp = FastMCP(
     ),
 )
 
-API_KEY = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0"
+API_KEY = "0b13b8c7adfa9aa11719a3c95160bcadb3af93677c9ff77dd7d3edfa87772bca"
+url = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"
+
+GRID_COORDINATES = {
+    "서울": {"nx": 60, "ny": 127},
+    "강릉": {"nx": 92, "ny": 131},
+    "부산": {"nx": 98, "ny": 76}
+}
 
 # ============================================================================
 # Tools (도구)
@@ -110,6 +119,57 @@ def multiply(x: int) -> str:
     answer = x * 10
 
     return f"{x} 곱하기 10은?\\n{answer}"
+
+@mcp.tool()
+def tell_weather(region: str) -> str:
+
+    if region not in GRID_COORDINATES:
+        return f"'{region}'에 대한 격자 좌표 정보가 없습니다. 좌표를 추가해주세요."
+    
+    nx = GRID_COORDINATES[region]["nx"]
+    ny = GRID_COORDINATES[region]["ny"]
+
+    now = datetime.now()
+    base_time = (now - timedelta(hours=1)).strftime("%H00") # 1시간 전 정시로 가정
+    base_date = now.strftime("%Y%m%d")
+
+    params = {
+        'serviceKey': API_KEY,
+        'pageNo': '1',
+        'numOfRows': '100',  # 충분한 데이터 확보를 위해 크게 설정
+        'dataType': 'JSON',
+        'base_date': base_date,
+        'base_time': base_time,
+        'nx': nx,
+        'ny': ny
+    }
+    raw_data = requests.get(url, params=params)
+
+    SKY_CODE = { '1': '맑음', '3': '구름많음', '4': '흐림' }
+    PTY_CODE = { '0': '없음', '1': '비', '2': '비/눈', '3': '눈', '4': '소나기', '5': '빗방울', '6': '빗방울/눈날림', '7': '눈날림' }
+    
+    weather_info = {}
+    items = raw_data['response']['body']['items']['item']
+    for item in items:
+        category = item.get('category')
+        value = item.get('fcstValue')
+        
+        # 가장 최근 시간의 데이터만 사용 (이 예시에서는 첫 번째 데이터를 사용한다고 가정)
+        if category == 'T1H': # 기온
+            weather_info['기온'] = value
+        elif category == 'SKY' and '하늘상태' not in weather_info: # 하늘 상태
+            weather_info['하늘상태'] = SKY_CODE.get(value, f"알 수 없는 SKY 코드 {value}")
+        elif category == 'PTY' and value != '0': # 강수 형태 (0이 아니면 기록)
+                weather_info['강수'] = PTY_CODE.get(value, f"알 수 없는 PTY 코드 {value}")
+    
+    
+    # 최종 결과 출력
+    summary = f" - 발표 시각: {base_date} {base_time}\n"
+    summary += f" - 하늘 상태: {weather_info.get('하늘상태', '정보 없음')}\n"
+    summary += f" - 기온: {weather_info.get('기온', '정보 없음')}℃\n"
+    summary += f" - 강수 형태: {weather_info.get('강수', '강수 없음')}"
+
+    return f"{region}의 날씨\\n{summary}"
 
 # ============================================================================
 # Resources (리소스)
